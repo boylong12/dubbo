@@ -35,16 +35,27 @@
 	<td>
 		#set($errorLevel = "ok")
 		#set($errorMessage = "")
-		
-		#if ($providerApplication == "")
-			#set($providerApplication = $provider.application)
+##----------------------解决错误显示警告bug--------------start
+##  dubbo-admin显示接口警告，一般是指有两个不同的dubbo.application.name注册了同一服务，主要是用于提醒防止多应用间因依赖jar包，误暴露服务，并不会影响运行
+##  https://github.com/alibaba/dubbo/issues/109
+##		#if ($providerApplication == "")
+##			#set($providerApplication = $provider.application)
+##		#end
+##
+##        #if($providerApplication != $provider.application)
+##        	#if ($errorLevel != "error") #set($errorLevel = "warn") #end
+##        	#set($errorMessage = "$errorMessage<br>$i18n.get('warn'): $i18n.get('CheckProviderApplicationDifferent', $providerApplication, $provider.application)")
+##        #end
+		#foreach($patchProvider in $providers)
+			#if ($patchProvider.application != $provider.application)
+				#if ($provider.service == $patchProvider.service)
+					#if ($errorLevel != "error") #set($errorLevel = "warn") #end
+					#set($errorMessage = "$errorMessage<br>$i18n.get('warn'): $i18n.get('CheckProviderApplicationDifferent', $patchProvider.application, $provider.application)")
+					#break
+				#end
+			#end
 		#end
-		
-        #if($providerApplication != $provider.application)
-        	#if ($errorLevel != "error") #set($errorLevel = "warn") #end
-        	#set($errorMessage = "$errorMessage<br>$i18n.get('warn'): $i18n.get('CheckProviderApplicationDifferent', $providerApplication, $provider.application)")
-        #end
-        
+##----------------------解决错误显示警告bug--------------end
         #if($provider.address.startsWith("127.") || $provider.address.startsWith("localhost:") || $provider.address.startsWith("0.0.0.0:"))
         	#if ($errorLevel != "error") #set($errorLevel = "warn") #end
         	#set($errorMessage = "$errorMessage<br>$i18n.get('warn'): $i18n.get('CheckProviderLocalAddress', $provider.address)")
